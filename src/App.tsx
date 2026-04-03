@@ -167,8 +167,11 @@ export default function App() {
     <div className={`min-h-screen flex font-sans transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0D0221] text-neutral-100" : "bg-[#FDFCF0] text-neutral-900"}`}>
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-500/10 blur-[120px] animate-horror-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/10 blur-[120px] animate-horror-pulse delay-1000" />
+        <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-pink-500/15 blur-[150px] animate-horror-pulse" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-600/15 blur-[150px] animate-horror-pulse delay-1000" />
+        <div className="absolute top-[30%] left-[40%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] animate-horror-pulse delay-2000" />
+        {/* Right side highlight line */}
+        <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[#FF0080] via-[#7928CA] to-[#FF0080] opacity-60 shadow-[0_0_30px_rgba(255,0,128,0.7)] z-50" />
         {isDarkMode && (
           <>
             <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-white rounded-full animate-ping opacity-20" />
@@ -198,22 +201,22 @@ export default function App() {
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-pink-500/5 pointer-events-none" />
 
         {/* Header */}
-        <header className="bg-white/20 dark:bg-black/40 backdrop-blur-3xl border-b border-white/10 dark:border-purple-500/10 px-6 py-5 flex items-center justify-between sticky top-0 z-30 shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
-          <div className="flex items-center gap-6">
+        <header className="bg-white/10 dark:bg-black/30 backdrop-blur-3xl border-b border-white/10 dark:border-purple-500/10 px-4 sm:px-8 py-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
+          <div className="flex items-center gap-4 sm:gap-8">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-3 hover:bg-white/20 dark:hover:bg-purple-500/20 rounded-2xl transition-all text-neutral-600 dark:text-neutral-400 hover:scale-110"
+              className="p-3.5 hover:bg-white/20 dark:hover:bg-purple-500/20 rounded-2xl transition-all text-neutral-600 dark:text-neutral-400 hover:scale-110 active:scale-95"
             >
-              <Menu size={24} />
+              <Menu size={26} />
             </button>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 premium-button rounded-2xl flex items-center justify-center text-white shadow-[0_0_30px_rgba(255,0,128,0.3)] animate-glow">
-                <Sparkles size={28} />
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 premium-button rounded-[1.2rem] flex items-center justify-center text-white shadow-[0_0_40px_rgba(255,0,128,0.4)] animate-glow">
+                <Sparkles size={32} />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-2xl font-black tracking-tighter neon-text">Rohit X AI</h1>
-                <p className="text-[9px] text-neutral-500 dark:text-purple-400 flex items-center gap-1.5 uppercase tracking-[0.2em] font-black">
-                  <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_10px_#00F5FF]"></span>
+              <div className="flex flex-col">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text leading-none">Rohit X AI</h1>
+                <p className="text-[9px] sm:text-[11px] text-neutral-500 dark:text-purple-400 flex items-center gap-2 uppercase tracking-[0.25em] font-black mt-1.5">
+                  <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_15px_#00F5FF]"></span>
                   Neural Active
                 </p>
               </div>
@@ -243,7 +246,7 @@ export default function App() {
         </header>
 
         {/* Chat Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full space-y-2 relative scroll-smooth">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 max-w-5xl mx-auto w-full space-y-2 relative scroll-smooth custom-scrollbar">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center min-h-full text-center space-y-8 py-12 px-4">
               {/* Logo */}
@@ -256,14 +259,14 @@ export default function App() {
               </motion.div>
 
               {/* Greeting */}
-              <div className="space-y-3">
-                <p className="text-neutral-500 dark:text-purple-400 font-black tracking-[0.3em] uppercase text-[10px] animate-pulse">
+              <div className="space-y-5">
+                <p className="text-neutral-500 dark:text-purple-400 font-black tracking-[0.4em] uppercase text-[11px] sm:text-[14px] animate-pulse">
                   {getGreeting()}
                 </p>
-                <h2 className="text-5xl font-black tracking-tighter neon-text">
+                <h2 className="text-6xl sm:text-8xl font-black tracking-tighter neon-text">
                   Namaste, Dost!
                 </h2>
-                <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto text-sm font-bold leading-relaxed">
+                <p className="text-neutral-600 dark:text-neutral-400 max-w-lg mx-auto text-base sm:text-lg font-bold leading-relaxed">
                   Main hoon Rohit — tera AI dost! Kuch bhi pooch, koi bhi mode chuno. 🎯
                 </p>
               </div>

@@ -5,6 +5,10 @@ service cloud.firestore {
     // Assumed Data Model
     // ===============================================================
     //
+    // Collection: test
+    // Document ID: connection
+    // Fields: (none required) - Used for connectivity health checks
+    //
     // Collection: users
     // Document ID: {uid}
     // Fields:
@@ -74,6 +78,10 @@ service cloud.firestore {
     // ===============================================================
     // Rules
     // ===============================================================
+
+    match /test/connection {
+      allow read: if true;
+    }
 
     match /users/{uid} {
       // Users can only read their own profile because it contains PII (email)

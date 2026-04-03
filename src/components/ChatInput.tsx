@@ -40,8 +40,8 @@ export default function ChatInput({ onSend, isLoading, isDarkMode, onOpenCamera,
   };
 
   return (
-    <footer className="bg-white/40 dark:bg-black/40 backdrop-blur-3xl border-t border-white/20 dark:border-purple-500/20 p-4 md:p-8 sticky bottom-0 z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.1)]">
-      <div className="max-w-4xl mx-auto relative">
+    <footer className="bg-white/40 dark:bg-black/40 backdrop-blur-3xl border-t border-white/20 dark:border-purple-500/20 p-4 md:p-8 sticky bottom-0 z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.15)]">
+      <div className="max-w-5xl mx-auto relative">
         <AnimatePresence>
           {showEmojiPicker && (
             <motion.div

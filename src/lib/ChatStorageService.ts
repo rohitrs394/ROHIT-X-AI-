@@ -1,4 +1,4 @@
-import { db, doc, setDoc, getDoc, updateDoc, collection, query, orderBy, onSnapshot, deleteDoc, Timestamp, getDocs, writeBatch } from "../firebase";
+import { db, doc, setDoc, getDoc, updateDoc, collection, query, orderBy, onSnapshot, deleteDoc, Timestamp, getDocs, writeBatch, handleFirestoreError, OperationType } from "../firebase";
 
 export interface Message {
   role: "user" | "model";
@@ -59,29 +59,33 @@ export class ChatStorageService {
     const sessionRef = doc(db, "users", uid, "sessions", sessionId);
     const msgRef = doc(collection(db, "users", uid, "sessions", sessionId, "messages"));
 
-    const batch = writeBatch(db);
-    
-    // Save message
-    batch.set(msgRef, message);
+    try {
+      const batch = writeBatch(db);
+      
+      // Save message
+      batch.set(msgRef, message);
 
-    // Update session metadata
-    const sessionSnap = await getDoc(sessionRef);
-    if (!sessionSnap.exists()) {
-      batch.set(sessionRef, {
-        id: sessionId,
-        title: sessionTitle || message.content.substring(0, 30) + "...",
-        lastMessage: message.content,
-        updatedAt: Timestamp.now(),
-        createdAt: Timestamp.now()
-      });
-    } else {
-      batch.update(sessionRef, {
-        lastMessage: message.content,
-        updatedAt: Timestamp.now()
-      });
+      // Update session metadata
+      const sessionSnap = await getDoc(sessionRef);
+      if (!sessionSnap.exists()) {
+        batch.set(sessionRef, {
+          id: sessionId,
+          title: sessionTitle || message.content.substring(0, 30) + "...",
+          lastMessage: message.content,
+          updatedAt: Timestamp.now(),
+          createdAt: Timestamp.now()
+        });
+      } else {
+        batch.update(sessionRef, {
+          lastMessage: message.content,
+          updatedAt: Timestamp.now()
+        });
+      }
+
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `users/${uid}/sessions/${sessionId}`);
     }
-
-    await batch.commit();
   }
 
   static subscribeToSessions(uid: string, callback: (sessions: ChatSession[]) => void) {
@@ -89,23 +93,36 @@ export class ChatStorageService {
     return onSnapshot(q, (snapshot) => {
       const sessions = snapshot.docs.map(doc => doc.data() as ChatSession);
       callback(sessions);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${uid}/sessions`);
     });
   }
 
   static async getMessagesFromFirestore(uid: string, sessionId: string): Promise<Message[]> {
     const q = query(collection(db, "users", uid, "sessions", sessionId, "messages"), orderBy("timestamp", "asc"));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data() as Message);
+    try {
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => doc.data() as Message);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, `users/${uid}/sessions/${sessionId}/messages`);
+      return [];
+    }
   }
 
   static async deleteSessionFromFirestore(uid: string, sessionId: string) {
-    // Note: In a real production app, you'd use a cloud function to delete subcollections.
-    // For this app, we'll delete the session doc. Messages will remain but be orphaned.
-    await deleteDoc(doc(db, "users", uid, "sessions", sessionId));
+    try {
+      await deleteDoc(doc(db, "users", uid, "sessions", sessionId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `users/${uid}/sessions/${sessionId}`);
+    }
   }
 
   static async renameSessionInFirestore(uid: string, sessionId: string, newTitle: string) {
-    await updateDoc(doc(db, "users", uid, "sessions", sessionId), { title: newTitle });
+    try {
+      await updateDoc(doc(db, "users", uid, "sessions", sessionId), { title: newTitle });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}/sessions/${sessionId}`);
+    }
   }
 
   // --- LocalStorage Operations (Guest Users) ---

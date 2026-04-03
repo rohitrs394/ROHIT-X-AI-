@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db, User, onAuthStateChanged, signOut, signInWithPopup, googleProvider, doc, getDoc, setDoc, Timestamp } from "./firebase";
+import { auth, db, User, onAuthStateChanged, signOut, signInWithPopup, googleProvider, doc, getDoc, setDoc, Timestamp, handleFirestoreError, OperationType } from "./firebase";
 
 interface UserProfile {
   uid: string;
@@ -39,22 +39,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
       if (currentUser) {
         // Fetch profile from Firestore
-        const profileDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (profileDoc.exists()) {
-          setProfile(profileDoc.data() as UserProfile);
-        } else {
-          // Create new profile if it doesn't exist (e.g., first time Google login)
-          const newProfile: UserProfile = {
-            uid: currentUser.uid,
-            displayName: currentUser.displayName || "User",
-            email: currentUser.email || undefined,
-            photoURL: currentUser.photoURL || "😊",
-            chatCount: 0,
-            badge: "Bronze",
-            createdAt: Timestamp.now(),
-          };
-          await setDoc(doc(db, "users", currentUser.uid), newProfile);
-          setProfile(newProfile);
+        try {
+          const profileDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (profileDoc.exists()) {
+            setProfile(profileDoc.data() as UserProfile);
+          } else {
+            // Create new profile if it doesn't exist (e.g., first time Google login)
+            const newProfile: UserProfile = {
+              uid: currentUser.uid,
+              displayName: currentUser.displayName || "User",
+              email: currentUser.email || undefined,
+              photoURL: currentUser.photoURL || "😊",
+              chatCount: 0,
+              badge: "Bronze",
+              createdAt: Timestamp.now(),
+            };
+            await setDoc(doc(db, "users", currentUser.uid), newProfile);
+            setProfile(newProfile);
+          }
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`);
         }
       } else {
         // Check for guest in localStorage
@@ -123,7 +127,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const updatedProfile = { ...profile, ...data };
     
     if (user) {
-      await setDoc(doc(db, "users", user.uid), updatedProfile, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid), updatedProfile, { merge: true });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+      }
     } else {
       localStorage.setItem("rohit_guest_profile", JSON.stringify(updatedProfile));
     }
