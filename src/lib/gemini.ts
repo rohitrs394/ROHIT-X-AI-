@@ -1,11 +1,19 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-const API_KEYS = [
-  "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
-  "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-  "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
-  "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E"
-];
+// Use environment variables for API keys, fallback to hardcoded ones for local dev
+const ENV_KEYS = import.meta.env.VITE_GEMINI_API_KEYS?.split(",").map((k: string) => k.trim()).filter(Boolean);
+const SINGLE_ENV_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+const API_KEYS = (ENV_KEYS && ENV_KEYS.length > 0) 
+  ? ENV_KEYS 
+  : (SINGLE_ENV_KEY ? [SINGLE_ENV_KEY] : [
+      "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
+      "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+      "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
+      "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E",
+      "AIzaSyD-9qOTXBCRL7d67RznsIZg3pc9CnWU", // Fallback 5
+      "AIzaSyE-9qOTXBCRL7d67RznsIZg3pc9CnWU"  // Fallback 6
+    ]);
 
 const SYSTEM_PROMPT = `
 Tu Rohit X AI hai - ek caring, funny, respectful Indian dost. 
@@ -49,13 +57,16 @@ class KeyRotator {
     const keyStatus = this.keys.find(k => k.key === key);
     if (keyStatus) {
       if (isRateLimit) {
-        // Cooldown for 1 minute as requested
-        keyStatus.cooldownUntil = Date.now() + 60 * 1000;
-        console.warn(`Key ${key.substring(0, 8)}... rate limited. Cooldown for 1 min.`);
+        // Cooldown for 2 minutes for rate limits
+        keyStatus.cooldownUntil = Date.now() + 120 * 1000;
+        console.warn(`Key ${key.substring(0, 8)}... rate limited. Cooldown for 2 min.`);
       } else {
-        // For other errors, maybe block or shorter cooldown
-        keyStatus.cooldownUntil = Date.now() + 10 * 1000;
+        // For other errors (403, etc), block for 5 minutes
+        keyStatus.cooldownUntil = Date.now() + 300 * 1000;
+        console.warn(`Key ${key.substring(0, 8)}... failed. Cooldown for 5 min.`);
       }
+      // Move to next key immediately
+      this.currentIndex = (this.currentIndex + 1) % this.keys.length;
     }
   }
 

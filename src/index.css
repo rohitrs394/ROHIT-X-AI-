@@ -50,14 +50,15 @@
 
   .horror-sweet-bubble {
     @apply relative overflow-hidden;
-    background: linear-gradient(135deg, #7928CA, #FF0080);
-    box-shadow: 0 10px 30px -10px rgba(121, 40, 202, 0.5);
+    background: linear-gradient(135deg, #FF0080 0%, #7928CA 100%);
+    box-shadow: 0 15px 40px -10px rgba(255, 0, 128, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .horror-sweet-bubble::after {
     content: '';
-    @apply absolute inset-0 opacity-20;
-    background: radial-gradient(circle at 20% 20%, white, transparent 40%);
+    @apply absolute inset-0 opacity-30;
+    background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.4), transparent 50%);
   }
 
   .neon-text {

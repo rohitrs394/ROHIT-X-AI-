@@ -128,9 +128,15 @@ export default function App() {
         
         updateProfileData({ chatCount: newCount, badge: newBadge });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat error:", error);
-      // In a real app, you'd show an error message in the chat
+      // Show error message in chat
+      const errorMsg = {
+        role: "model" as const,
+        content: `Oops! Kuch gadbad ho gayi. 🙄\n\nError: ${error.message || "Unknown error"}\n\nCheck karo ki API Key sahi hai ya nahi. Agar Netlify pe ho, toh environment variables set karo.`,
+        timestamp: user ? Timestamp.now() : new Date().toISOString()
+      };
+      await saveMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -170,6 +176,8 @@ export default function App() {
         <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-pink-500/15 blur-[150px] animate-horror-pulse" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-600/15 blur-[150px] animate-horror-pulse delay-1000" />
         <div className="absolute top-[30%] left-[40%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] animate-horror-pulse delay-2000" />
+        <div className="absolute top-[60%] right-[20%] w-[30%] h-[30%] bg-indigo-500/10 blur-[100px] animate-horror-pulse delay-3000" />
+        <div className="absolute top-[10%] left-[20%] w-[25%] h-[25%] bg-cyan-500/5 blur-[80px] animate-horror-pulse delay-1500" />
         {/* Right side highlight line */}
         <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[#FF0080] via-[#7928CA] to-[#FF0080] opacity-60 shadow-[0_0_30px_rgba(255,0,128,0.7)] z-50" />
         {isDarkMode && (
@@ -215,10 +223,12 @@ export default function App() {
               </div>
               <div className="flex flex-col">
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tighter neon-text leading-none">Rohit X AI</h1>
-                <p className="text-[9px] sm:text-[11px] text-neutral-500 dark:text-purple-400 flex items-center gap-2 uppercase tracking-[0.25em] font-black mt-1.5">
-                  <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_15px_#00F5FF]"></span>
-                  Neural Active
-                </p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="w-2.5 h-2.5 bg-[#00F5FF] rounded-full animate-pulse shadow-[0_0_15px_#00F5FF]"></span>
+                  <p className="text-[9px] sm:text-[11px] text-neutral-500 dark:text-purple-400 uppercase tracking-[0.3em] font-black leading-none">
+                    Neural Active
+                  </p>
+                </div>
               </div>
             </div>
           </div>
