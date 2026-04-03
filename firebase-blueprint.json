@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information including chat count and decorations.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique user ID." },
+        "displayName": { "type": "string", "description": "User's chosen display name." },
+        "email": { "type": "string", "description": "User's email address." },
+        "photoURL": { "type": "string", "description": "URL to the user's avatar image or emoji." },
+        "bio": { "type": "string", "description": "Short user biography." },
+        "chatCount": { "type": "number", "description": "Total number of chats sent by the user." },
+        "badge": { "type": "string", "enum": ["Bronze", "Silver", "Gold"], "description": "Current user badge level." },
+        "bgColor": { "type": "string", "description": "Profile background color (hex)." },
+        "frame": { "type": "string", "description": "Selected profile frame ID." },
+        "isGuest": { "type": "boolean", "description": "Whether the user is a guest." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "displayName", "chatCount", "badge", "createdAt"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A collection of messages representing a single conversation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique session ID." },
+        "title": { "type": "string", "description": "Auto-generated or user-defined title." },
+        "lastMessage": { "type": "string", "description": "Preview of the last message." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last activity in the session." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the session started." }
+      },
+      "required": ["id", "title", "updatedAt", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single chat message in a session.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"], "description": "The role of the message sender." },
+        "content": { "type": "string", "description": "The text content of the message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." }
+      },
+      "required": ["role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/users/{uid}/sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "User's chat sessions."
+    },
+    "/users/{uid}/sessions/{sessionId}/messages/{msgId}": {
+      "schema": "ChatMessage",
+      "description": "Messages within a specific session."
+    }
+  }
+}

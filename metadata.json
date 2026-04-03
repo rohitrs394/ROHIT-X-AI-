@@ -1,0 +1,5 @@
+{
+  "name": "Rohit X AI",
+  "description": "A caring, funny, and respectful Indian AI friend who speaks in Hindi/Hinglish.",
+  "requestFramePermissions": ["camera", "display-capture", "microphone"]
+}
