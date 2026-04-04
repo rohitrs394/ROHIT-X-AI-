@@ -1,19 +1,26 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
 // Use environment variables for API keys, fallback to hardcoded ones for local dev
-const ENV_KEYS = import.meta.env.VITE_GEMINI_API_KEYS?.split(",").map((k: string) => k.trim()).filter(Boolean);
+const ENV_KEYS = import.meta.env.VITE_GEMINI_API_KEYS?.split(",").map((k: string) => k.trim()).filter(Boolean) || [];
 const SINGLE_ENV_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const PLATFORM_KEY = process.env.GEMINI_API_KEY;
 
-const API_KEYS = (ENV_KEYS && ENV_KEYS.length > 0) 
-  ? ENV_KEYS 
-  : (SINGLE_ENV_KEY ? [SINGLE_ENV_KEY] : [
-      "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
-      "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-      "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
-      "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E",
-      "AIzaSyD-9qOTXBCRL7d67RznsIZg3pc9CnWU", // Fallback 5
-      "AIzaSyE-9qOTXBCRL7d67RznsIZg3pc9CnWU"  // Fallback 6
-    ]);
+// Merge all available keys into a single rotation list
+const ALL_KEYS = Array.from(new Set([
+  PLATFORM_KEY,
+  SINGLE_ENV_KEY,
+  ...ENV_KEYS,
+  "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
+  "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+  "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
+  "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E",
+  "AIzaSyD-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+  "AIzaSyE-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+  "AIzaSyF-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+  "AIzaSyG-9qOTXBCRL7d67RznsIZg3pc9CnWU"
+])).filter(k => k && typeof k === "string" && k.startsWith("AIza")).filter(Boolean) as string[];
+
+const API_KEYS = ALL_KEYS.length > 0 ? ALL_KEYS : ["AIza_DUMMY_KEY_SET_VITE_GEMINI_API_KEY"]; 
 
 const SYSTEM_PROMPT = `
 Tu Rohit X AI hai - ek caring, funny, respectful Indian dost. 
@@ -27,6 +34,7 @@ interface KeyStatus {
   key: string;
   cooldownUntil: number;
   isBlocked: boolean;
+  failCount: number;
 }
 
 class KeyRotator {
@@ -34,7 +42,7 @@ class KeyRotator {
   private currentIndex: number = 0;
 
   constructor(keys: string[]) {
-    this.keys = keys.map(key => ({ key, cooldownUntil: 0, isBlocked: false }));
+    this.keys = keys.map(key => ({ key, cooldownUntil: 0, isBlocked: false, failCount: 0 }));
   }
 
   async getActiveKey(): Promise<string | null> {
@@ -56,14 +64,18 @@ class KeyRotator {
   markKeyFailed(key: string, isRateLimit: boolean = true) {
     const keyStatus = this.keys.find(k => k.key === key);
     if (keyStatus) {
+      keyStatus.failCount++;
       if (isRateLimit) {
         // Cooldown for 2 minutes for rate limits
         keyStatus.cooldownUntil = Date.now() + 120 * 1000;
         console.warn(`Key ${key.substring(0, 8)}... rate limited. Cooldown for 2 min.`);
       } else {
-        // For other errors (403, etc), block for 5 minutes
+        // For other errors (403, etc), block for 5 minutes or more
         keyStatus.cooldownUntil = Date.now() + 300 * 1000;
-        console.warn(`Key ${key.substring(0, 8)}... failed. Cooldown for 5 min.`);
+        if (keyStatus.failCount > 5) {
+          keyStatus.isBlocked = true;
+          console.error(`Key ${key.substring(0, 8)}... blocked permanently due to multiple failures.`);
+        }
       }
       // Move to next key immediately
       this.currentIndex = (this.currentIndex + 1) % this.keys.length;
@@ -75,8 +87,9 @@ class KeyRotator {
     return this.keys.map((k, i) => ({
       index: i + 1,
       key: `${k.key.substring(0, 8)}...`,
-      status: k.cooldownUntil > now ? "Cooldown" : "Active",
-      cooldownRemaining: Math.max(0, Math.round((k.cooldownUntil - now) / 1000))
+      status: k.isBlocked ? "Blocked" : (k.cooldownUntil > now ? "Cooldown" : "Active"),
+      cooldownRemaining: Math.max(0, Math.round((k.cooldownUntil - now) / 1000)),
+      failCount: k.failCount
     }));
   }
 }
@@ -86,12 +99,12 @@ const rotator = new KeyRotator(API_KEYS);
 export const geminiService = {
   async chat(message: string, history: any[] = [], imageData?: string) {
     let attempts = 0;
-    const maxAttempts = API_KEYS.length;
+    const maxAttempts = Math.min(API_KEYS.length, 10); // Don't try too many times
 
     while (attempts < maxAttempts) {
       const apiKey = await rotator.getActiveKey();
-      if (!apiKey) {
-        throw new Error("All APIs busy. Please wait a minute.");
+      if (!apiKey || apiKey.includes("DUMMY")) {
+        throw new Error("Sare API Keys busy hain ya limit khatam ho gayi hai. 🙄 Apni API Key Netlify settings mein add karo (VITE_GEMINI_API_KEY).");
       }
 
       try {
@@ -131,15 +144,17 @@ export const geminiService = {
         return response.text || "Sorry, main samajh nahi paaya. Phir se bolo?";
       } catch (error: any) {
         attempts++;
-        const isRateLimit = error?.message?.includes("429") || error?.status === 429;
+        console.error(`Attempt ${attempts} failed with key ${apiKey.substring(0, 8)}...:`, error);
+        
+        const isRateLimit = error?.message?.includes("429") || error?.status === 429 || error?.message?.includes("quota");
         rotator.markKeyFailed(apiKey, isRateLimit);
         
         if (attempts >= maxAttempts) {
-          throw new Error("All APIs busy. Please wait a minute.");
+          throw new Error("Sare API Keys busy hain. 🙄 Thodi der baad try karo ya apni API Key add karo.");
         }
       }
     }
-    throw new Error("All APIs busy. Please wait a minute.");
+    throw new Error("Sare API Keys busy hain. 🙄");
   },
 
   async speak(text: string) {

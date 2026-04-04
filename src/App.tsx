@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, Moon, Sun, Sparkles, Smile, History, Plus, Trash2, Trash, X, MessageSquare, Heart, User, Mic } from "lucide-react";
+import { Menu, Moon, Sun, Sparkles, Smile, History, Plus, Trash2, Trash, X, MessageSquare, Heart, User, Mic, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Sidebar from "./components/Sidebar";
 import MessageBubble from "./components/MessageBubble";
@@ -157,6 +157,10 @@ export default function App() {
     setIsSidebarOpen(false);
   };
 
+  const [showDebug, setShowDebug] = useState(false);
+
+  const keyStats = (geminiService as any).getStats ? (geminiService as any).getStats() : [];
+
   if (loading || !isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
@@ -234,6 +238,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowDebug(true)}
+              className="p-3 hover:bg-neutral-100 dark:hover:bg-purple-900/30 rounded-2xl transition-all text-neutral-600 dark:text-neutral-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:scale-110"
+              title="API Status"
+            >
+              <Settings size={22} />
+            </button>
             <button
               onClick={() => setIsLiveVoiceOpen(true)}
               className="p-3 hover:bg-neutral-100 dark:hover:bg-purple-900/30 rounded-2xl transition-all text-neutral-600 dark:text-neutral-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:scale-110"
@@ -391,6 +402,53 @@ export default function App() {
       </div>
 
       {/* Modals */}
+      <AnimatePresence>
+        {showDebug && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white dark:bg-neutral-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-white/10"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-cyan-400" />
+                  API Key Status
+                </h2>
+                <button onClick={() => setShowDebug(false)} className="text-neutral-500 hover:text-white">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {keyStats.map((stat: any) => (
+                  <div key={stat.index} className="flex items-center justify-between p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-neutral-400">Key #{stat.index} ({stat.key})</span>
+                      <span className={`text-sm font-medium ${
+                        stat.status === "Active" ? "text-green-500" : stat.status === "Cooldown" ? "text-yellow-500" : "text-red-500"
+                      }`}>
+                        {stat.status} {stat.status === "Cooldown" ? `(${stat.cooldownRemaining}s)` : ""}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase tracking-wider text-neutral-500">Fails: {stat.failCount}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                <p className="text-xs text-cyan-600 dark:text-cyan-400 leading-relaxed">
+                  <strong>Tip:</strong> Agar sare keys "Blocked" ya "Cooldown" mein hain, toh apni personal API Key Netlify/Cloud Run settings mein <strong>VITE_GEMINI_API_KEY</strong> ke naam se add karein.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <CameraModal
         isOpen={isCameraModalOpen}
         onClose={() => setIsCameraModalOpen(false)}

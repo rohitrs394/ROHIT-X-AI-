@@ -11,18 +11,38 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-// Initialize SQLite
-const db = new Database("chat_history.db");
-db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    session_id TEXT,
-    role TEXT,
-    content TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+// Initialize SQLite (Use /tmp for Cloud Run compatibility)
+const dbPath = process.env.NODE_ENV === "production" ? "/tmp/chat_history.db" : "chat_history.db";
+let db: Database.Database;
+
+try {
+  db = new Database(dbPath);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      session_id TEXT,
+      role TEXT,
+      content TEXT,
+      timestamp DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    )
+  `);
+  console.log(`Database initialized at ${dbPath}`);
+} catch (error) {
+  console.error("Failed to initialize database:", error);
+  // Fallback to in-memory if file fails
+  db = new Database(":memory:");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      session_id TEXT,
+      role TEXT,
+      content TEXT,
+      timestamp DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    )
+  `);
+}
 
 app.use(cors());
 app.use(express.json());

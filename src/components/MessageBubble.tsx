@@ -34,6 +34,26 @@ export default function MessageBubble({ msg, onDelete }: MessageBubbleProps) {
     }
   };
 
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return "Just now";
+    try {
+      // Handle Firestore Timestamp
+      if (timestamp.toDate && typeof timestamp.toDate === "function") {
+        return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      // Handle Firestore-like object {seconds, nanoseconds}
+      if (timestamp.seconds) {
+        return new Date(timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      // Handle ISO string or Date object
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return "Just now";
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return "Just now";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -69,7 +89,7 @@ export default function MessageBubble({ msg, onDelete }: MessageBubbleProps) {
           
           <div className="flex items-center gap-2 mt-1.5 px-1">
             <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">
-              {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+              {formatTime(msg.timestamp)}
             </span>
             {!isUser && (
               <button
