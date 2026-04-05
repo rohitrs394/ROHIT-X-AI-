@@ -17,45 +17,9 @@ export interface ChatSession {
 export class ChatStorageService {
   private static LOCAL_STORAGE_KEY = "rohit_local_chats";
 
-  // --- SQLite Operations (Backend) ---
-
-  static async saveToSQLite(uid: string, sessionId: string, role: string, content: string) {
-    try {
-      await fetch("/api/history/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: uid, session_id: sessionId, role, content })
-      });
-    } catch (error) {
-      console.error("Failed to save to SQLite:", error);
-    }
-  }
-
-  static async getSQLiteHistory(uid: string): Promise<any[]> {
-    try {
-      const response = await fetch(`/api/history/${uid}`);
-      return await response.json();
-    } catch (error) {
-      console.error("Failed to fetch SQLite history:", error);
-      return [];
-    }
-  }
-
-  static async clearSQLiteHistory(uid: string, sessionId?: string) {
-    try {
-      const url = sessionId ? `/api/history/${uid}?session_id=${sessionId}` : `/api/history/${uid}`;
-      await fetch(url, { method: "DELETE" });
-    } catch (error) {
-      console.error("Failed to clear SQLite history:", error);
-    }
-  }
-
   // --- Firestore Operations (Logged-in Users) ---
 
   static async saveMessageToFirestore(uid: string, sessionId: string, message: Message, sessionTitle?: string) {
-    // Save to SQLite as well
-    this.saveToSQLite(uid, sessionId, message.role, message.content);
-    
     const sessionRef = doc(db, "users", uid, "sessions", sessionId);
     const msgRef = doc(collection(db, "users", uid, "sessions", sessionId, "messages"));
 
@@ -137,9 +101,6 @@ export class ChatStorageService {
   }
 
   static saveMessageLocally(sessionId: string, message: Message, sessionTitle?: string) {
-    // Save to SQLite as well (using sessionId as uid for guests)
-    this.saveToSQLite(sessionId, sessionId, message.role, message.content);
-
     const data = this.getLocalData();
     if (!data[sessionId]) {
       data[sessionId] = {

@@ -1,24 +1,24 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-// Use environment variables for API keys, fallback to hardcoded ones for local dev
-const ENV_KEYS = import.meta.env.VITE_GEMINI_API_KEYS?.split(",").map((k: string) => k.trim()).filter(Boolean) || [];
-const SINGLE_ENV_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const PLATFORM_KEY = process.env.GEMINI_API_KEY;
-
 // Merge all available keys into a single rotation list
 const ALL_KEYS = Array.from(new Set([
-  PLATFORM_KEY,
-  SINGLE_ENV_KEY,
-  ...ENV_KEYS,
-  "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
-  "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-  "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
-  "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E",
-  "AIzaSyD-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-  "AIzaSyE-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-  "AIzaSyF-9qOTXBCRL7d67RznsIZg3pc9CnWU",
-  "AIzaSyG-9qOTXBCRL7d67RznsIZg3pc9CnWU"
+  import.meta.env.VITE_GEMINI_API_KEY,
+  ...(import.meta.env.VITE_GEMINI_API_KEYS?.split(",").map((k: string) => k.trim()).filter(Boolean) || [])
 ])).filter(k => k && typeof k === "string" && k.startsWith("AIza")).filter(Boolean) as string[];
+
+// Add hardcoded fallbacks if no env keys are found
+if (ALL_KEYS.length === 0) {
+  ALL_KEYS.push(
+    "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ",
+    "AIzaSyC6uB-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+    "AIzaSyCg_jCmRuPYXN2MscC4TuQrw8Riie46ahs",
+    "AIzaSyBtGrKYrmnfCW5HTLAFGlcbJrXMVCuTi3E",
+    "AIzaSyD-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+    "AIzaSyE-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+    "AIzaSyF-9qOTXBCRL7d67RznsIZg3pc9CnWU",
+    "AIzaSyG-9qOTXBCRL7d67RznsIZg3pc9CnWU"
+  );
+}
 
 const API_KEYS = ALL_KEYS.length > 0 ? ALL_KEYS : ["AIza_DUMMY_KEY_SET_VITE_GEMINI_API_KEY"]; 
 
@@ -208,17 +208,5 @@ export const geminiService = {
 
   getStats() {
     return rotator.getStats();
-  },
-
-  async reportStats() {
-    try {
-      await fetch("/api/stats/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stats: rotator.getStats() })
-      });
-    } catch (error) {
-      console.error("Failed to report stats:", error);
-    }
   }
 };

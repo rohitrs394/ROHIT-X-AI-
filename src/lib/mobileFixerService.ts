@@ -24,7 +24,8 @@ Response format strictly JSON:
 export const mobileFixerService = {
   async getSolution(problem: string) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyByqw19jMiGjT9tiszroFRZiSueLgxL7fQ";
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `User problem: ${problem}`,

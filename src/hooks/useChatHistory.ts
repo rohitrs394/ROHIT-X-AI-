@@ -85,10 +85,8 @@ export function useChatHistory() {
 
   const deleteSession = async (sessionId: string) => {
     if (user) {
-      await ChatStorageService.clearSQLiteHistory(user.uid, sessionId);
       await ChatStorageService.deleteSessionFromFirestore(user.uid, sessionId);
     } else {
-      await ChatStorageService.clearSQLiteHistory(sessionId, sessionId);
       ChatStorageService.deleteLocalSession(sessionId);
       setSessions(ChatStorageService.getLocalSessions());
     }
@@ -106,11 +104,9 @@ export function useChatHistory() {
 
   const clearAll = async () => {
     if (user) {
-      await ChatStorageService.clearSQLiteHistory(user.uid);
       // For Firestore, we'd need a cloud function or a batch delete.
       // For now, we'll just clear local.
     } else {
-      if (currentSessionId) await ChatStorageService.clearSQLiteHistory(currentSessionId);
       ChatStorageService.clearAllLocalSessions();
       setSessions([]);
     }

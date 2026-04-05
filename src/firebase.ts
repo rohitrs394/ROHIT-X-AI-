@@ -7,10 +7,23 @@ import firebaseConfig from "../firebase-applet-config.json";
 
 // Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  ignoreUndefinedProperties: true,
-}, firebaseConfig.firestoreDatabaseId);
+
+// Initialize Firestore with settings and named database support
+// We use initializeFirestore to set experimentalForceLongPolling which helps in some restricted network environments
+let dbInstance;
+try {
+  const databaseId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
+  dbInstance = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    ignoreUndefinedProperties: true,
+  }, databaseId);
+  console.log("Firestore initialized with database ID:", databaseId);
+} catch (e) {
+  console.error("Failed to initialize Firestore with settings, falling back to default initialization:", e);
+  dbInstance = getFirestore(app);
+}
+
+export const db = dbInstance;
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

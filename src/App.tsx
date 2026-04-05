@@ -65,9 +65,6 @@ export default function App() {
     const savedDarkMode = localStorage.getItem("rohit_dark_mode") === "true";
     setIsDarkMode(savedDarkMode);
     if (savedDarkMode) document.documentElement.classList.add("dark");
-    
-    // Initial stats report
-    geminiService.reportStats();
   }, []);
 
   // Scroll to bottom
@@ -116,9 +113,6 @@ export default function App() {
           timestamp: user ? Timestamp.now() : new Date().toISOString() 
         };
         await saveMessage(aiMsg);
-
-        // Report stats to backend
-        await geminiService.reportStats();
 
         // Update chat count and badge
         const newCount = profile.chatCount + 1;
